@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmarklet Editor & Console</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        textarea, input, button { display: block; margin: 10px 0; width: 100%; }
+        #console { height: 150px; background: #eee; padding: 10px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h2>Bookmarklet Editor</h2>
+    <input type="text" id="bookmarkletName" placeholder="Bookmarklet Name">
+    <textarea id="bookmarkletCode" placeholder="javascript:(function(){alert('Hello');})();"></textarea>
+    <button onclick="saveBookmarklet()">Save Bookmarklet</button>
+    <button onclick="runBookmarklet()">Run Bookmarklet</button>
+    
+    <h2>Saved Bookmarklets</h2>
+    <ul id="bookmarkletList"></ul>
+    
+    <h2>JavaScript Console</h2>
+    <textarea id="consoleInput" placeholder="Enter JavaScript code here..."></textarea>
+    <button onclick="runConsole()">Run Code</button>
+    <div id="console"></div>
+
+    <script>
+        function saveBookmarklet() {
+            let name = document.getElementById("bookmarkletName").value;
+            let code = document.getElementById("bookmarkletCode").value;
+            if (name && code) {
+                localStorage.setItem(name, code);
+                loadBookmarklets();
+            }
+        }
+
+        function loadBookmarklets() {
+            let list = document.getElementById("bookmarkletList");
+            list.innerHTML = "";
+            Object.keys(localStorage).forEach(name => {
+                let li = document.createElement("li");
+                let a = document.createElement("a");
+                a.href = localStorage.getItem(name);
+                a.textContent = name;
+                a.onclick = function() { eval(a.href); return false; };
+                li.appendChild(a);
+                list.appendChild(li);
+            });
+        }
+
+        function runBookmarklet() {
+            let code = document.getElementById("bookmarkletCode").value;
+            eval(code);
+        }
+
+        function runConsole() {
+            let input = document.getElementById("consoleInput").value;
+            try {
+                let result = eval(input);
+                document.getElementById("console").innerHTML += "\n" + result;
+            } catch (error) {
+                document.getElementById("console").innerHTML += "\nError: " + error;
+            }
+        }
+
+        loadBookmarklets();
+    </script>
+</body>
+</html>
