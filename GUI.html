@@ -49,17 +49,32 @@
             list-style: none;
             padding: 0;
         }
-        li a {
-            display: block;
-            padding: 8px;
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background: #007BFF;
             color: white;
-            text-decoration: none;
+            padding: 8px;
             border-radius: 5px;
             margin-top: 5px;
         }
-        li a:hover {
-            background: #0056b3;
+        li a {
+            color: white;
+            text-decoration: none;
+            flex-grow: 1;
+        }
+        li button {
+            background: red;
+            border: none;
+            color: white;
+            padding: 5px;
+            margin-left: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        li button:hover {
+            background: darkred;
         }
     </style>
 </head>
@@ -99,9 +114,20 @@
                 a.href = localStorage.getItem(name);
                 a.textContent = name;
                 a.onclick = function() { eval(a.href); return false; };
+                
+                let deleteBtn = document.createElement("button");
+                deleteBtn.textContent = "Delete";
+                deleteBtn.onclick = function() { deleteBookmarklet(name); };
+                
                 li.appendChild(a);
+                li.appendChild(deleteBtn);
                 list.appendChild(li);
             });
+        }
+
+        function deleteBookmarklet(name) {
+            localStorage.removeItem(name);
+            loadBookmarklets();
         }
 
         function runBookmarklet() {
