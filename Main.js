@@ -94,19 +94,20 @@ document.addEventListener("keydown", function (e) {
                 <h2>Bookmarklet Editor</h2>
                 <input type="text" id="bookmarkletName" placeholder="Bookmarklet Name">
                 <textarea id="bookmarkletCode" placeholder="javascript:(function(){alert('Hello');})();"></textarea>
-                <button onclick="saveBookmarklet()">Save Bookmarklet</button>
-                <button onclick="runBookmarklet()">Run Bookmarklet</button>
+                <button id="saveBtn">Save Bookmarklet</button>
+                <button id="runBtn">Run Bookmarklet</button>
                 
                 <h2>Saved Bookmarklets</h2>
                 <ul id="bookmarkletList"></ul>
                 
                 <h2>JavaScript Console</h2>
                 <textarea id="consoleInput" placeholder="Enter JavaScript code here..."></textarea>
-                <button onclick="runConsole()">Run Code</button>
+                <button id="runConsoleBtn">Run Code</button>
                 <div id="console"></div>
             </div>
             
             <script>
+                // Function to save a bookmarklet
                 function saveBookmarklet() {
                     let name = document.getElementById("bookmarkletName").value;
                     let code = document.getElementById("bookmarkletCode").value;
@@ -115,10 +116,11 @@ document.addEventListener("keydown", function (e) {
                         loadBookmarklets();
                     }
                 }
-        
+
+                // Function to load saved bookmarklets from localStorage
                 function loadBookmarklets() {
                     let list = document.getElementById("bookmarkletList");
-                    list.innerHTML = "";
+                    list.innerHTML = "";  // Clear the list
                     Object.keys(localStorage).forEach(name => {
                         let li = document.createElement("li");
                         let a = document.createElement("a");
@@ -135,17 +137,20 @@ document.addEventListener("keydown", function (e) {
                         list.appendChild(li);
                     });
                 }
-        
+
+                // Function to delete a bookmarklet
                 function deleteBookmarklet(name) {
                     localStorage.removeItem(name);
                     loadBookmarklets();
                 }
-        
+
+                // Function to run a bookmarklet
                 function runBookmarklet() {
                     let code = document.getElementById("bookmarkletCode").value;
                     eval(code);
                 }
-        
+
+                // Function to run custom JS in the console
                 function runConsole() {
                     let input = document.getElementById("consoleInput").value;
                     try {
@@ -155,8 +160,14 @@ document.addEventListener("keydown", function (e) {
                         document.getElementById("console").innerHTML += "<br>Error: " + error;
                     }
                 }
-        
+
+                // Load bookmarklets on page load
                 loadBookmarklets();
+
+                // Add event listeners for buttons
+                document.getElementById("saveBtn").addEventListener("click", saveBookmarklet);
+                document.getElementById("runBtn").addEventListener("click", runBookmarklet);
+                document.getElementById("runConsoleBtn").addEventListener("click", runConsole);
             </script>
         </body>
         </html>
