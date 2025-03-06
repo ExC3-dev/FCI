@@ -3,7 +3,7 @@ document.addEventListener("keydown", function (e) {
 	if (e.key == "~" && e.ctrlKey) {
 		var t = window.open("", "_blank", "width=500,height=300");
 		var e = t.document.createElement("iframe");
-		(e.src = "//honeydew-1741227720558.staticrun.app"),
+		(e.src = "//fcihtml.staticrun.app/"),
 			(e.style.cssText = "width:100%; height:100%; border:none;"),
 			t.document.body.appendChild(e),
 			t.document.title = "Fci",
