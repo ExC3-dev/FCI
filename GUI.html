@@ -1,104 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Floating Window</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-        #floatingWindow {
-            position: fixed;
-            top: 50px;
-            left: 50px;
-            width: 400px;
-            height: 300px;
-            background: white;
-            border: 2px solid black;
-            box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
-            z-index: 1000;
-            resize: both;
-            overflow: hidden;
-        }
-        #header {
-            background: #007BFF;
-            color: white;
-            padding: 8px;
-            cursor: grab;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        #closeBtn {
-            background: red;
-            border: none;
-            color: white;
-            padding: 5px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        #iframeContainer {
-            width: 100%;
-            height: calc(100% - 40px);
-        }
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bookmarklet Editor & Network Viewer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #121212;
+      color: #fff;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    input, textarea, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+      font-size: 1em;
+    }
+    button {
+      background: #007BFF;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    li button {
+      width: auto;
+      margin-right: 5px;
+      margin-top: 5px;
+    }
+    pre {
+      background: #333;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .tab-button {
+      background: #222;
+      border: 1px solid #444;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 0 5px;
+      border-radius: 5px 5px 0 0;
+    }
+    .tab-button.active {
+      background: #007BFF;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* Source Viewer Styling */
+    .source-viewer {
+      background: #222;
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      text-align: left;
+      font-family: monospace;
+    }
+    .source-viewer button {
+      background: #d9534f;
+      margin-bottom: 10px;
+    }
+    /* Network Output */
+    #networkOutput pre {
+      background: #333;
+    }
+    #networkOutput img {
+      max-width: 100%;
+      margin: 5px;
+    }
+  </style>
 </head>
 <body>
-
-    <button onclick="openFloatingWindow()">Open Window</button>
-
-    <div id="floatingWindow" style="display: none;">
-        <div id="header">
-            <span>Floating Window</span>
-            <button id="closeBtn">X</button>
-        </div>
-        <div id="iframeContainer">
-            <iframe src="https://fcihtml.staticrun.app/"></iframe>
-        </div>
+  <div class="container">
+    <h1>Bookmarklet Editor & Network Viewer</h1>
+    <div class="tabs">
+      <button class="tab-button active" data-tab="bookmarklet-tab">Bookmarklets & Console</button>
+      <button class="tab-button" data-tab="network-tab">Website Source & Network</button>
     </div>
-
-    <script>
-        function openFloatingWindow() {
-            document.getElementById("floatingWindow").style.display = "block";
-        }
-
-        document.getElementById("closeBtn").addEventListener("click", function() {
-            document.getElementById("floatingWindow").style.display = "none";
+    <!-- Bookmarklets & Console Section -->
+    <div id="bookmarklet-tab" class="tab-content active">
+      <h2>Bookmarklet Editor</h2>
+      <form id="bookmarkletForm">
+        <input type="text" id="bmTitle" placeholder="Bookmarklet Title" required />
+        <textarea id="bmCode" rows="4" placeholder="Bookmarklet Code" required></textarea>
+        <button type="submit">Save Bookmarklet</button>
+      </form>
+      <ul id="bookmarkletList"></ul>
+      
+      <h2>JavaScript Console</h2>
+      <form id="consoleForm">
+        <textarea id="consoleInput" rows="3" placeholder="Enter JavaScript code"></textarea>
+        <button type="submit">Execute</button>
+      </form>
+      <pre id="consoleOutput"></pre>
+    </div>
+    
+    <!-- Network Viewer Section -->
+    <div id="network-tab" class="tab-content">
+      <h2>Website Source & Network Viewer</h2>
+      <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://example.com)" />
+      <button id="fetchButton">Fetch Website</button>
+      <div id="networkOutput"></div>
+    </div>
+  </div>
+  
+  <script>
+    // --- Tab Switching ---
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-tab')).classList.add('active');
+      });
+    });
+    
+    // --- Bookmarklet Editor ---
+    let bookmarklets = JSON.parse(localStorage.getItem('bookmarklets')) || [];
+    
+    function renderBookmarklets() {
+      const list = document.getElementById('bookmarkletList');
+      list.innerHTML = '';
+      bookmarklets.forEach((bm, index) => {
+        const li = document.createElement('li');
+        li.style.borderBottom = '1px solid #444';
+        li.style.padding = '10px 0';
+        li.innerHTML = `<strong>${bm.title}</strong>`;
+        
+        // Run Button
+        const runBtn = document.createElement('button');
+        runBtn.textContent = 'Run';
+        runBtn.onclick = () => {
+          try {
+            eval(bm.code);
+          } catch(e) {
+            alert('Error executing bookmarklet: ' + e);
+          }
+        };
+        
+        // Edit Button
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.onclick = () => {
+          document.getElementById('bmTitle').value = bm.title;
+          document.getElementById('bmCode').value = bm.code;
+          // Remove the bookmarklet so it can be updated
+          bookmarklets.splice(index, 1);
+          localStorage.setItem('bookmarklets', JSON.stringify(bookmarklets));
+          renderBookmarklets();
+        };
+        
+        // Delete Button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          bookmarklets.splice(index, 1);
+          localStorage.setItem('bookmarklets', JSON.stringify(bookmarklets));
+          renderBookmarklets();
+        };
+        
+        // View Source Button
+        const viewSourceBtn = document.createElement('button');
+        viewSourceBtn.textContent = 'View Source';
+        viewSourceBtn.onclick = () => {
+          // Create a dedicated div to show the code
+          const sourceDiv = document.createElement('div');
+          sourceDiv.className = 'source-viewer';
+          // Add a close button for the viewer
+          const closeBtn = document.createElement('button');
+          closeBtn.textContent = 'Close';
+          closeBtn.onclick = () => {
+            sourceDiv.remove();
+          };
+          sourceDiv.appendChild(closeBtn);
+          // Display the code with escaping to preserve HTML characters
+          const pre = document.createElement('pre');
+          pre.innerHTML = escapeHtml(bm.code);
+          sourceDiv.appendChild(pre);
+          li.appendChild(sourceDiv);
+        };
+        
+        [runBtn, editBtn, deleteBtn, viewSourceBtn].forEach(btn => {
+          btn.style.marginRight = '5px';
+          li.appendChild(btn);
         });
-
-        // Make window draggable
-        (function() {
-            var win = document.getElementById("floatingWindow");
-            var header = document.getElementById("header");
-            var offsetX, offsetY, isDragging = false;
-
-            header.addEventListener("mousedown", function(e) {
-                isDragging = true;
-                offsetX = e.clientX - win.offsetLeft;
-                offsetY = e.clientY - win.offsetTop;
-                header.style.cursor = "grabbing";
+        list.appendChild(li);
+      });
+    }
+    
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+    }
+    
+    document.getElementById('bookmarkletForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const title = document.getElementById('bmTitle').value;
+      const code = document.getElementById('bmCode').value;
+      bookmarklets.push({ title, code });
+      localStorage.setItem('bookmarklets', JSON.stringify(bookmarklets));
+      document.getElementById('bmTitle').value = '';
+      document.getElementById('bmCode').value = '';
+      renderBookmarklets();
+    });
+    
+    renderBookmarklets();
+    
+    // --- JavaScript Console ---
+    document.getElementById('consoleForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const code = document.getElementById('consoleInput').value;
+      let output;
+      try {
+        output = eval(code);
+      } catch (err) {
+        output = err;
+      }
+      document.getElementById('consoleOutput').textContent = output;
+    });
+    
+    // --- Network Viewer ---
+    document.getElementById('fetchButton').addEventListener('click', function() {
+      const url = document.getElementById('urlInput').value;
+      if (!url) {
+        alert('Please enter a URL.');
+        return;
+      }
+      const outputDiv = document.getElementById('networkOutput');
+      outputDiv.innerHTML = 'Fetching...';
+      fetch(url)
+        .then(response => {
+          const headers = Array.from(response.headers.entries())
+            .map(([key, value]) => key + ': ' + value)
+            .join('\n');
+          return response.text().then(text => ({
+            status: response.status,
+            statusText: response.statusText,
+            headers: headers,
+            body: text
+          }));
+        })
+        .then(data => {
+          // Display network details and source code
+          outputDiv.innerHTML = `<div style="text-align:left;">
+            <h3>Network Details</h3>
+            <pre>Status: ${data.status} ${data.statusText}</pre>
+            <pre>Headers:\n${escapeHtml(data.headers)}</pre>
+            <h3>Source Code</h3>
+            <pre style="background:#333; padding:10px; border-radius:5px;">${escapeHtml(data.body)}</pre>
+          </div>`;
+          
+          // Extract and display images from the fetched HTML
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = data.body;
+          const imgs = tempDiv.querySelectorAll('img');
+          if (imgs.length > 0) {
+            const imgContainer = document.createElement('div');
+            imgContainer.style.marginTop = '10px';
+            imgContainer.innerHTML = '<h3>Images</h3>';
+            imgs.forEach(img => {
+              const newImg = document.createElement('img');
+              newImg.src = img.src;
+              newImg.style.maxWidth = '100%';
+              newImg.style.margin = '5px';
+              imgContainer.appendChild(newImg);
             });
-
-            document.addEventListener("mousemove", function(e) {
-                if (isDragging) {
-                    win.style.left = e.clientX - offsetX + "px";
-                    win.style.top = e.clientY - offsetY + "px";
-                }
-            });
-
-            document.addEventListener("mouseup", function() {
-                isDragging = false;
-                header.style.cursor = "grab";
-            });
-        })();
-    </script>
-
+            outputDiv.appendChild(imgContainer);
+          }
+        })
+        .catch(err => {
+          outputDiv.innerHTML = 'Error fetching URL: ' + err;
+        });
+    });
+  </script>
 </body>
 </html>
