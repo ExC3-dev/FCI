@@ -3,149 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bookmarklet Editor & Console</title>
+    <title>Floating Window</title>
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            background: #f4f4f4;
-            text-align: center;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
+        #floatingWindow {
+            position: fixed;
+            top: 50px;
+            left: 50px;
+            width: 400px;
+            height: 300px;
             background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 2px solid black;
+            box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
+            z-index: 1000;
+            resize: both;
+            overflow: hidden;
         }
-        textarea, input, button { 
-            width: 100%; 
-            padding: 10px; 
-            margin: 10px 0; 
-            border-radius: 5px; 
-            border: 1px solid #ccc; 
-        }
-        button { 
-            background: #007BFF; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-        }
-        button:hover { 
-            background: #0056b3; 
-        }
-        #console {
-            height: 150px;
-            background: #222;
-            color: lime;
-            padding: 10px;
-            overflow-y: auto;
-            text-align: left;
-            border-radius: 5px;
-            font-family: monospace;
-        }
-        ul {
-            list-style: none;
-            padding: 0;
-        }
-        li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        #header {
             background: #007BFF;
             color: white;
             padding: 8px;
-            border-radius: 5px;
-            margin-top: 5px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        li a {
-            color: white;
-            text-decoration: none;
-            flex-grow: 1;
-        }
-        li button {
+        #closeBtn {
             background: red;
             border: none;
             color: white;
             padding: 5px;
-            margin-left: 10px;
             border-radius: 5px;
             cursor: pointer;
         }
-        li button:hover {
-            background: darkred;
+        #iframeContainer {
+            width: 100%;
+            height: calc(100% - 40px);
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Bookmarklet Editor</h2>
-        <input type="text" id="bookmarkletName" placeholder="Bookmarklet Name">
-        <textarea id="bookmarkletCode" placeholder="javascript:(function(){alert('Hello');})();"></textarea>
-        <button onclick="saveBookmarklet()">Save Bookmarklet</button>
-        <button onclick="runBookmarklet()">Run Bookmarklet</button>
-        
-        <h2>Saved Bookmarklets</h2>
-        <ul id="bookmarkletList"></ul>
-        
-        <h2>JavaScript Console</h2>
-        <textarea id="consoleInput" placeholder="Enter JavaScript code here..."></textarea>
-        <button onclick="runConsole()">Run Code</button>
-        <div id="console"></div>
+
+    <button onclick="openFloatingWindow()">Open Window</button>
+
+    <div id="floatingWindow" style="display: none;">
+        <div id="header">
+            <span>Floating Window</span>
+            <button id="closeBtn">X</button>
+        </div>
+        <div id="iframeContainer">
+            <iframe src="https://fcihtml.staticrun.app/"></iframe>
+        </div>
     </div>
-    
+
     <script>
-        function saveBookmarklet() {
-            let name = document.getElementById("bookmarkletName").value;
-            let code = document.getElementById("bookmarkletCode").value;
-            if (name && code) {
-                localStorage.setItem(name, code);
-                loadBookmarklets();
-            }
+        function openFloatingWindow() {
+            document.getElementById("floatingWindow").style.display = "block";
         }
 
-        function loadBookmarklets() {
-            let list = document.getElementById("bookmarkletList");
-            list.innerHTML = "";
-            Object.keys(localStorage).forEach(name => {
-                let li = document.createElement("li");
-                let a = document.createElement("a");
-                a.href = localStorage.getItem(name);
-                a.textContent = name;
-                a.onclick = function() { eval(a.href); return false; };
-                
-                let deleteBtn = document.createElement("button");
-                deleteBtn.textContent = "Delete";
-                deleteBtn.onclick = function() { deleteBookmarklet(name); };
-                
-                li.appendChild(a);
-                li.appendChild(deleteBtn);
-                list.appendChild(li);
+        document.getElementById("closeBtn").addEventListener("click", function() {
+            document.getElementById("floatingWindow").style.display = "none";
+        });
+
+        // Make window draggable
+        (function() {
+            var win = document.getElementById("floatingWindow");
+            var header = document.getElementById("header");
+            var offsetX, offsetY, isDragging = false;
+
+            header.addEventListener("mousedown", function(e) {
+                isDragging = true;
+                offsetX = e.clientX - win.offsetLeft;
+                offsetY = e.clientY - win.offsetTop;
+                header.style.cursor = "grabbing";
             });
-        }
 
-        function deleteBookmarklet(name) {
-            localStorage.removeItem(name);
-            loadBookmarklets();
-        }
+            document.addEventListener("mousemove", function(e) {
+                if (isDragging) {
+                    win.style.left = e.clientX - offsetX + "px";
+                    win.style.top = e.clientY - offsetY + "px";
+                }
+            });
 
-        function runBookmarklet() {
-            let code = document.getElementById("bookmarkletCode").value;
-            eval(code);
-        }
-
-        function runConsole() {
-            let input = document.getElementById("consoleInput").value;
-            try {
-                let result = eval(input);
-                document.getElementById("console").innerHTML += "\n" + result;
-            } catch (error) {
-                document.getElementById("console").innerHTML += "\nError: " + error;
-            }
-        }
-
-        loadBookmarklets();
+            document.addEventListener("mouseup", function() {
+                isDragging = false;
+                header.style.cursor = "grab";
+            });
+        })();
     </script>
+
 </body>
 </html>
