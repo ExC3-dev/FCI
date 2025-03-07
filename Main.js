@@ -1,4 +1,5 @@
 /// Main.js
+
 // Global variable to store the container reference.
 let fciContainer = null;
 
