@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bookmarklet Editor & Network Viewer</title>
+  <title>Bookmarklet Editor & DevTools Inspector</title>
   <style>
+    /* Global Styles */
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
       background: #121212;
-      color: #fff;
+      color: #eee;
     }
     .container {
-      max-width: 900px;
+      max-width: 1000px;
       margin: auto;
       background: #1e1e1e;
       padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     }
     h1, h2, h3 {
       text-align: center;
@@ -26,7 +27,7 @@
       width: 100%;
       padding: 10px;
       margin: 10px 0;
-      border-radius: 5px;
+      border-radius: 4px;
       border: 1px solid #444;
       background: #222;
       color: #fff;
@@ -36,9 +37,18 @@
       background: #007BFF;
       border: none;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
     button:hover {
       background: #0056b3;
+    }
+    pre {
+      background: #333;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-family: monospace;
+      white-space: pre-wrap;
     }
     ul {
       list-style: none;
@@ -46,21 +56,15 @@
     }
     li {
       margin-bottom: 10px;
+      padding: 8px;
+      border-bottom: 1px solid #444;
     }
     li button {
       width: auto;
       margin-right: 5px;
       margin-top: 5px;
     }
-    pre {
-      background: #333;
-      padding: 10px;
-      border-radius: 5px;
-      overflow-x: auto;
-      font-family: monospace;
-      white-space: pre-wrap;
-    }
-    /* Tabs */
+    /* Main Tab Navigation */
     .tabs {
       display: flex;
       justify-content: center;
@@ -72,7 +76,7 @@
       padding: 10px 20px;
       cursor: pointer;
       margin: 0 5px;
-      border-radius: 5px 5px 0 0;
+      border-radius: 4px 4px 0 0;
     }
     .tab-button.active {
       background: #007BFF;
@@ -83,37 +87,75 @@
     .tab-content.active {
       display: block;
     }
-    /* Source Viewer Styling */
-    .source-viewer {
-      background: #222;
-      padding: 10px;
-      margin-top: 10px;
-      border: 1px solid #555;
-      border-radius: 5px;
-      text-align: left;
-      font-family: monospace;
-    }
-    .source-viewer button {
-      background: #d9534f;
+    /* Developer Tools Sub-tabs */
+    .dev-tabs {
+      display: flex;
+      justify-content: center;
       margin-bottom: 10px;
     }
-    /* Network Output */
-    #networkOutput pre {
-      background: #333;
+    .dev-tab-button {
+      background: #222;
+      border: 1px solid #444;
+      padding: 8px 16px;
+      cursor: pointer;
+      margin: 0 5px;
+      border-radius: 4px 4px 0 0;
     }
-    #networkOutput img {
-      max-width: 100%;
-      margin: 5px;
+    .dev-tab-button.active {
+      background: #007BFF;
+    }
+    .dev-tab-content {
+      display: none;
+      padding: 10px;
+      border: 1px solid #444;
+      border-top: none;
+      background: #1e1e1e;
+      border-radius: 0 0 4px 4px;
+    }
+    .dev-tab-content.active {
+      display: block;
+    }
+    /* Sources List */
+    .resource-group {
+      margin-bottom: 20px;
+    }
+    .resource-group h3 {
+      margin-bottom: 5px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 3px;
+    }
+    .resource-group ul {
+      margin-left: 20px;
+    }
+    .resource-group li {
+      cursor: pointer;
+      color: #007BFF;
+      text-decoration: underline;
+    }
+    /* Network Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #444;
+      text-align: left;
+      font-size: 0.9em;
+    }
+    th {
+      background: #222;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Bookmarklet Editor & Network Viewer</h1>
+  <div class="container" id="main-container">
+    <h1>Bookmarklet Editor & DevTools Inspector</h1>
     <div class="tabs">
       <button class="tab-button active" data-tab="bookmarklet-tab">Bookmarklets & Console</button>
-      <button class="tab-button" data-tab="network-tab">Website Source & Network</button>
+      <button class="tab-button" data-tab="devtools-tab">Developer Tools</button>
     </div>
+    
     <!-- Bookmarklets & Console Section -->
     <div id="bookmarklet-tab" class="tab-content active">
       <h2>Bookmarklet Editor</h2>
@@ -132,17 +174,30 @@
       <pre id="consoleOutput"></pre>
     </div>
     
-    <!-- Network Viewer Section -->
-    <div id="network-tab" class="tab-content">
-      <h2>Website Source & Network Viewer</h2>
-      <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://example.com)" />
-      <button id="fetchButton">Fetch Website</button>
-      <div id="networkOutput"></div>
+    <!-- Developer Tools Section -->
+    <div id="devtools-tab" class="tab-content">
+      <h2>Developer Tools (Current Site)</h2>
+      <div class="dev-tabs">
+        <button class="dev-tab-button active" data-dev-tab="sourcesTab">Sources</button>
+        <button class="dev-tab-button" data-dev-tab="networkTab">Network</button>
+      </div>
+      
+      <!-- Sources Sub-tab -->
+      <div id="sourcesTab" class="dev-tab-content active">
+        <button id="refreshSources">Refresh Sources</button>
+        <div id="sourcesContent"></div>
+      </div>
+      
+      <!-- Network Sub-tab -->
+      <div id="networkTab" class="dev-tab-content">
+        <button id="refreshNetwork">Refresh Network</button>
+        <div id="networkContent"></div>
+      </div>
     </div>
   </div>
   
   <script>
-    // --- Tab Switching ---
+    // ----- Main Tab Switching -----
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
     tabButtons.forEach(btn => {
@@ -154,7 +209,7 @@
       });
     });
     
-    // --- Bookmarklet Editor ---
+    // ----- Bookmarklet Editor & Console -----
     let bookmarklets = JSON.parse(localStorage.getItem('bookmarklets')) || [];
     
     function renderBookmarklets() {
@@ -162,8 +217,6 @@
       list.innerHTML = '';
       bookmarklets.forEach((bm, index) => {
         const li = document.createElement('li');
-        li.style.borderBottom = '1px solid #444';
-        li.style.padding = '10px 0';
         li.innerHTML = `<strong>${bm.title}</strong>`;
         
         // Run Button
@@ -183,7 +236,6 @@
         editBtn.onclick = () => {
           document.getElementById('bmTitle').value = bm.title;
           document.getElementById('bmCode').value = bm.code;
-          // Remove the bookmarklet so it can be updated
           bookmarklets.splice(index, 1);
           localStorage.setItem('bookmarklets', JSON.stringify(bookmarklets));
           renderBookmarklets();
@@ -202,17 +254,12 @@
         const viewSourceBtn = document.createElement('button');
         viewSourceBtn.textContent = 'View Source';
         viewSourceBtn.onclick = () => {
-          // Create a dedicated div to show the code
           const sourceDiv = document.createElement('div');
           sourceDiv.className = 'source-viewer';
-          // Add a close button for the viewer
           const closeBtn = document.createElement('button');
           closeBtn.textContent = 'Close';
-          closeBtn.onclick = () => {
-            sourceDiv.remove();
-          };
+          closeBtn.onclick = () => { sourceDiv.remove(); };
           sourceDiv.appendChild(closeBtn);
-          // Display the code with escaping to preserve HTML characters
           const pre = document.createElement('pre');
           pre.innerHTML = escapeHtml(bm.code);
           sourceDiv.appendChild(pre);
@@ -248,7 +295,6 @@
     
     renderBookmarklets();
     
-    // --- JavaScript Console ---
     document.getElementById('consoleForm').addEventListener('submit', function(e) {
       e.preventDefault();
       const code = document.getElementById('consoleInput').value;
@@ -261,59 +307,116 @@
       document.getElementById('consoleOutput').textContent = output;
     });
     
-    // --- Network Viewer ---
-    document.getElementById('fetchButton').addEventListener('click', function() {
-      const url = document.getElementById('urlInput').value;
-      if (!url) {
-        alert('Please enter a URL.');
-        return;
-      }
-      const outputDiv = document.getElementById('networkOutput');
-      outputDiv.innerHTML = 'Fetching...';
-      fetch(url)
-        .then(response => {
-          const headers = Array.from(response.headers.entries())
-            .map(([key, value]) => key + ': ' + value)
-            .join('\n');
-          return response.text().then(text => ({
-            status: response.status,
-            statusText: response.statusText,
-            headers: headers,
-            body: text
-          }));
-        })
-        .then(data => {
-          // Display network details and source code
-          outputDiv.innerHTML = `<div style="text-align:left;">
-            <h3>Network Details</h3>
-            <pre>Status: ${data.status} ${data.statusText}</pre>
-            <pre>Headers:\n${escapeHtml(data.headers)}</pre>
-            <h3>Source Code</h3>
-            <pre style="background:#333; padding:10px; border-radius:5px;">${escapeHtml(data.body)}</pre>
-          </div>`;
-          
-          // Extract and display images from the fetched HTML
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = data.body;
-          const imgs = tempDiv.querySelectorAll('img');
-          if (imgs.length > 0) {
-            const imgContainer = document.createElement('div');
-            imgContainer.style.marginTop = '10px';
-            imgContainer.innerHTML = '<h3>Images</h3>';
-            imgs.forEach(img => {
-              const newImg = document.createElement('img');
-              newImg.src = img.src;
-              newImg.style.maxWidth = '100%';
-              newImg.style.margin = '5px';
-              imgContainer.appendChild(newImg);
-            });
-            outputDiv.appendChild(imgContainer);
-          }
-        })
-        .catch(err => {
-          outputDiv.innerHTML = 'Error fetching URL: ' + err;
-        });
+    // ----- Developer Tools Sub-tab Switching -----
+    const devTabButtons = document.querySelectorAll('.dev-tab-button');
+    const devTabContents = document.querySelectorAll('.dev-tab-content');
+    devTabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        devTabButtons.forEach(b => b.classList.remove('active'));
+        devTabContents.forEach(tc => tc.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.getAttribute('data-dev-tab')).classList.add('active');
+      });
     });
+    
+    // ----- Sources Tab: Scan Current Document for Resources -----
+    function refreshSources() {
+      const sourcesContent = document.getElementById('sourcesContent');
+      sourcesContent.innerHTML = '';
+      
+      // Exclude the DevTools container (if needed) by ID
+      const excludeEl = document.getElementById('main-container');
+      
+      // Gather resources from the current document
+      const images = Array.from(document.querySelectorAll("img")).map(img => img.src);
+      const scripts = Array.from(document.querySelectorAll("script[src]")).map(s => s.src);
+      const stylesheets = Array.from(document.querySelectorAll("link[rel='stylesheet']")).map(l => l.href);
+      
+      // Remove duplicates
+      const unique = arr => [...new Set(arr)];
+      
+      const groups = {
+        "Images": unique(images),
+        "Scripts": unique(scripts),
+        "Stylesheets": unique(stylesheets)
+      };
+      
+      for (let type in groups) {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'resource-group';
+        const header = document.createElement('h3');
+        header.textContent = type;
+        groupDiv.appendChild(header);
+        if (groups[type].length === 0) {
+          const p = document.createElement('p');
+          p.textContent = 'None found.';
+          groupDiv.appendChild(p);
+        } else {
+          const ul = document.createElement('ul');
+          groups[type].forEach(url => {
+            const li = document.createElement('li');
+            li.textContent = url;
+            li.title = "Click to open resource in a new tab";
+            li.onclick = () => { window.open(url, "_blank"); };
+            ul.appendChild(li);
+          });
+          groupDiv.appendChild(ul);
+        }
+        sourcesContent.appendChild(groupDiv);
+      }
+    }
+    
+    document.getElementById('refreshSources').addEventListener('click', refreshSources);
+    
+    // ----- Network Tab: List Resource Timing -----
+    function refreshNetwork() {
+      const networkContent = document.getElementById('networkContent');
+      networkContent.innerHTML = '';
+      
+      // Get main navigation entry (if available)
+      const navEntries = performance.getEntriesByType('navigation');
+      let navHTML = '';
+      if (navEntries.length > 0) {
+        const nav = navEntries[0];
+        navHTML = `<h3>Main Document</h3>
+          <table>
+            <tr><th>Type</th><th>Start Time (ms)</th><th>Duration (ms)</th></tr>
+            <tr>
+              <td>navigation</td>
+              <td>${Math.round(nav.startTime)}</td>
+              <td>${Math.round(nav.duration)}</td>
+            </tr>
+          </table>`;
+      }
+      
+      // Get all resource entries
+      const resources = performance.getEntriesByType('resource');
+      let tableHTML = `<h3>Resources (${resources.length})</h3>
+        <table>
+          <tr>
+            <th>Name</th>
+            <th>Initiator</th>
+            <th>Start (ms)</th>
+            <th>Duration (ms)</th>
+          </tr>`;
+      resources.forEach(res => {
+        tableHTML += `<tr>
+          <td title="${res.name}">${res.name.substring(0,50)}${res.name.length>50?'...':''}</td>
+          <td>${res.initiatorType}</td>
+          <td>${Math.round(res.startTime)}</td>
+          <td>${Math.round(res.duration)}</td>
+        </tr>`;
+      });
+      tableHTML += `</table>`;
+      
+      networkContent.innerHTML = navHTML + tableHTML;
+    }
+    
+    document.getElementById('refreshNetwork').addEventListener('click', refreshNetwork);
+    
+    // Automatically load sources and network info on first open
+    refreshSources();
+    refreshNetwork();
   </script>
 </body>
 </html>
