@@ -1,3 +1,5 @@
+/// Main.js
+
 document.addEventListener("keydown", function (e) {
 	if (e.key == "~" && e.ctrlKey) {
 		// Create a floating container instead of opening a new tab
